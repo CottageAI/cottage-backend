@@ -39,13 +39,13 @@ class OllamaBackend(LLMBackend):
         }
 
     def stream_chat(
-        self,
-        messages: list[dict[str, str]],
-        model: str,
-        **kwargs: Any
-    ) -> Iterator[str]:
+    self,
+    messages: list[dict[str, str]],
+    model: str,
+    **kwargs: Any
+) -> Iterator[dict[str, Any]]:
         """
-        Stream chat chunks from Ollama and yield text as it arrives.
+        Stream events from Ollama and yield normalized event dictionaries.
         """
         url = f"{self.base_url}/api/chat"
 
@@ -67,9 +67,36 @@ class OllamaBackend(LLMBackend):
                     continue
 
                 data = requests.models.complexjson.loads(line)
-                chunk = data.get("message", {}).get("content", "")
-                if chunk:
-                    yield chunk
+                content = data.get("message", {}).get("content", "")
+                thinking = data.get("message", {}).get("thinking", False)
+                tool_calls = data.get("message", {}).get("tool_calls", [])
+                
+                if thinking:
+                    yield {
+                        "type": "thinking",
+                        "raw": data,
+                    }
+                
+                if tool_calls:
+                    for tool_call in tool_calls:
+                        yield {
+                            "type": "tool_call",
+                            "tool_call": tool_call,
+                            "raw": data,
+                        }
+                        
+                if content:
+                    yield {
+                        "type": "text",
+                        "content": content,
+                        "raw": data,
+                    }
+
+                if data.get("done"):
+                    yield {
+                        "type": "done",
+                        "raw": data,
+                    }
 
     def list_models(self) -> list[str]:
         """
