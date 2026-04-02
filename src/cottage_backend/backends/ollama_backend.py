@@ -38,12 +38,8 @@ class OllamaBackend(LLMBackend):
             "raw": data,
         }
 
-    def stream_chat(
-    self,
-    messages: list[dict[str, str]],
-    model: str,
-    **kwargs: Any
-) -> Iterator[dict[str, Any]]:
+    def stream_chat(self, messages: list[dict[str, str]],  model: str,
+                    **kwargs: Any) -> Iterator[dict[str, Any]]:
         """
         Stream events from Ollama and yield normalized event dictionaries.
         """
@@ -74,6 +70,7 @@ class OllamaBackend(LLMBackend):
                 if thinking:
                     yield {
                         "type": "thinking",
+                        "thinking": thinking,
                         "raw": data,
                     }
                 
