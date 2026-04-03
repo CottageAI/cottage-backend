@@ -8,12 +8,8 @@ class OllamaBackend(LLMBackend):
     def __init__(self, base_url: str = "http://127.0.0.1:11434"):
         self.base_url = base_url.rstrip("/")
 
-    def chat(
-        self,
-        messages: list[dict[str, str]],
-        model: str,
-        **kwargs: Any
-    ) -> dict[str, Any]:
+    def chat(self, messages: list[dict[str, str]], model: str, 
+             **kwargs: Any) -> dict[str, Any]:
         """
         Make a non-streaming chat request to Ollama.
         """
@@ -24,10 +20,7 @@ class OllamaBackend(LLMBackend):
             "messages": messages,
             "stream": False,
         }
-
-        options = kwargs.get("options")
-        if options:
-            payload["options"] = options
+        payload.update(kwargs)
 
         response = requests.post(url, json=payload, timeout=120)
         response.raise_for_status()
@@ -38,7 +31,7 @@ class OllamaBackend(LLMBackend):
             "raw": data,
         }
 
-    def stream_chat(self, messages: list[dict[str, str]],  model: str,
+    def stream_chat(self, messages: list[dict[str, str]],  model: str, 
                     **kwargs: Any) -> Iterator[dict[str, Any]]:
         """
         Stream events from Ollama and yield normalized event dictionaries.
@@ -50,10 +43,7 @@ class OllamaBackend(LLMBackend):
             "messages": messages,
             "stream": True,
         }
-
-        options = kwargs.get("options")
-        if options:
-            payload["options"] = options
+        payload.update(kwargs)
 
         with requests.post(url, json=payload, stream=True, timeout=120) as response:
             response.raise_for_status()
